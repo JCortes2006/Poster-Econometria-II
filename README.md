@@ -6,3 +6,6 @@ Sin embargo hay un leve problema de rezagos dentro de la FAC y FACP de este mode
 
 PARA ANACONDA ENVIRONMENT:
 Usar Numpy, Pandas, Matplotlib, Statsmodels, Scipy
+
+Uso de branches:
+Pueden bien sea desde la aplicación o desde la web crear una branch, a la cual subirán la actualización del documento, para evitar alterra el documento principal
