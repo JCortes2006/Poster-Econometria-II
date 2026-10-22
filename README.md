@@ -7,6 +7,6 @@ La base de datos original recolecta el IPC desde 1979 para todas las ciudades de
 
 Se creó un enviroment en Anaconda con las librerias: Numpy, Pandas, Matplotlib y Statsmodels
 
-El modelo que mejor se ajustó a la serie de datos consistió en un SARIMA(1,1,1)(1,0,1,12); la diferenciación d=1 fue necesaria para estandarizar la serie y que fuese acepata por los test de Duckey Fuller y KPSS (ambos con constante y tendencia lineal).
+El modelo que mejor se ajustó a la serie de datos consistió en un SARIMA(1,1,1)(1,0,0,12); la diferenciación d=1 fue necesaria para estandarizar la serie y que fuese acepata por los test de Duckey Fuller y KPSS (con constante).
 Tuvo que agregarse un componente estacionario debido a que esta serie es mensual, por lo que se evidenciaba una relación entre la observación en un mes con la observación del mismo mes pero en el año anterior.
 Finalmente la predicción resultó acorde a las observaciones, pues, como se trabajó con un modelo base 100, era de esperarse que se predijeran observaciones cercanas a este valor (la sustentación de esto se realizará en el póster y durante su exposición).
