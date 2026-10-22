@@ -50,16 +50,19 @@ plt.show()
 #   FAC y FACP ----------------------------------------------------------------------
 #%%
 plot_acf(Serie, lags=100)
+plt.title("FAC de la Serie Original")
 plt.show()
 
 plot_pacf(Serie, lags=20)
+plt.title("FACP de la Serie Original")
 plt.show()
 # Podriamos sugerir AR(1) debido a que en la FACP hay 1 rezago significativo
 
 # %% HAREMOS LOS TEST ADF ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # SIN EMBARGO: puede ser sin constante, con constante o con constante y tendencia lineal
-# H0: La raíz es unitaria, por ende NO es estacionario
+
+# H0: La raíz es unitaria, por ende NO es estacionario (puede ser caminata aleatoria)
 # Ha: La raíz no es unitaria, SI es estacionario
 
 # NO se usará sin constante, pq gráficamente se evidencia una tendencia además de que
@@ -125,6 +128,9 @@ plt.plot(Serie_diff_uno)
 plt.title("Serie Diferenciada 1 Vez")
 plt.show()
 
+# VISUALMENTE SE PIERDE LA TENDENCIA LINEAL, ENTONCES EL TEST AHORA ES SOLO 
+# CON CONSTANTE
+
 # %% HACEMOS EL TEST ADF    ##
 
 test_adf_diff = adfuller(Serie_diff_uno, regression = "c")
@@ -143,9 +149,11 @@ else:
 # %% POR ENDE, SE CONCLUYE QUE d = 1, AHORA IDENTIFICAMOS EL MODELO
 
 FAC_dif = plot_acf(Serie_diff_uno, lags=20)
+plt.title("FAC Serie Diferenciada 1 Vez")
 plt.show()
 
 FACP_diff = plot_pacf(Serie_diff_uno, lags=20)
+plt.title("FACP Serie Diferenciada 1 Vez")
 plt.show()
 
 # Con estas gráficas creemos que se puede tratar:
@@ -482,18 +490,19 @@ else:
 # HAY aucotorrelación, errores NORMALES, hay HOMOSCEDASTICIDAD
 
 # %% Como todavia hay autocorrelación está quedando algo que no capta el modelo por completo
-# NO puede ser AR(2) ya que anteriormente vimos que el 2do rezago es insignificativo
+# podría ser agregar una parte MA u otro rezago AR.
+# SIN EMBARGO, de agregarse alguno de estos q o p, se hacen de forma natural, es decir
+# no seria correcto agergarlas a P o Q, ya que no habria evidencia de que estos q o p nuevos
+# tengan estacionalidad. HASTA EL MOMENTO SOLO HAY EVIDENCIA DE QUE AR(1) ES EESTACIONAL CADA 12 PERIODOS
 
-# Entonces vamos a meter MA(1), que si bien anteriormente dio que era insignificativo
-# tmb presentó rezago en el periodo 12 en sus FAC y FACP, por lo que no solo agregamos
-# MA(1) sino que metemos Q=1 a la parte estacional
 
-modelo_sar11 = SARIMAX( Serie, order=(1,1,1), seasonal_order=(1,0,1,12), trend = "t")
+# PROBAMOS AGREGANDO UN COMPONENTE MA
+modelo_sar11 = SARIMAX( Serie, order=(1,1,1), seasonal_order=(1,0,0,12))
 sar11_estimado = modelo_sar11.fit(disp=False)
 
 print(sar11_estimado.summary())
-#   AIC = -17.642       BIC = -1.776
-# Algo bueno es que AHORA TODOS LOS COEFICIENTES SON SIGNIFICATIVOS
+#   AIC = -4.121       BIC = 6.457
+# Algo bueno es que TODOS LOS COEFICIENTES SON SIGNIFICATIVOS
 
 # %%   GRAFICAR RESIDUOS
 
@@ -547,12 +556,12 @@ else:
 
 # NO HAY AUTOCORRELACIÓN, HAY NORMALIDAD, HAY HOMOSCEDASTICIDAD
 
-#   Finalmente, nos quedamos con un modelo SARIMA(1,1,1)(1,0,1,12)
+#   Finalmente, nos quedamos con un modelo SARIMA(1,1,1)(1,0,0,12)
 
 # %% PRONOSTICAMOS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Prediccion_sarima11 = sar11_estimado.get_forecast(steps=30)
-# Por curiosidad coloqué steps = 24 para ver dos años adelante
+Prediccion_sarima11 = sar11_estimado.get_forecast(steps=27)
+# Por curiosidad coloqué steps = 27 para ver dos años adelante
 Valores_predichos = Prediccion_sarima11.predicted_mean
 IC_sarima11 = Prediccion_sarima11.conf_int()
 
@@ -563,7 +572,7 @@ tabla_pronostico = pd.DataFrame({
 })
 print(tabla_pronostico)
 
-# GRÁFICA PRONÓSTICO
+#%%GRÁFICA PRONÓSTICO 
 plt.plot(Serie, label="Datos históricos")
 plt.title("Precio Relativo de la Canasta Básica Familiar en Bogotá (relación a precio de sept 2026)")
 plt.xlabel("Fecha")
