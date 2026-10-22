@@ -551,7 +551,7 @@ else:
 
 # %% PRONOSTICAMOS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Prediccion_sarima11 = sar11_estimado.get_forecast(steps=15)
+Prediccion_sarima11 = sar11_estimado.get_forecast(steps=30)
 # Por curiosidad coloqué steps = 24 para ver dos años adelante
 Valores_predichos = Prediccion_sarima11.predicted_mean
 IC_sarima11 = Prediccion_sarima11.conf_int()
