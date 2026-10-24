@@ -510,23 +510,23 @@ Residual_sar11 = sar11_estimado.resid.dropna()
 Residuos_sar11 = Residual_sar11.iloc[1:]
 
 plt.plot(Residuos_sar11)
-plt.title("Residuos del Modelo SARIMA(1,1,1)(1,0,1,10)")
+plt.title("Residuos del Modelo SARIMA(1,1,1)(1,0,0,12)")
 plt.show()
 
 FAC_residuos_sar11 = plot_acf(Residuos_sar11, lags = 15)
-plt.title("FAC de los Residuos del Modelo SARIMA(1,1,1)(1,0,1,12)")
+plt.title("FAC de los Residuos del Modelo SARIMA(1,1,1)(1,0,0,12)")
 plt.xlabel("Rezagos")
 plt.show()
 
 FACP_residuos_sar11 = plot_pacf(Residuos_sar11, lags = 15)
-plt.title("FACP de los Residuos del Modelo SARIMA(1,1,1)(1,0,1,12)")
+plt.title("FACP de los Residuos del Modelo SARIMA(1,1,1)(1,0,0,12)")
 plt.xlabel("Rezagos")
 plt.show()
 
 # %% VERIFICAR SUPUESTOS
 
 #   NO AUTOCORRELACIÓN:
-LB_sar11 = acorr_ljungbox(Residuos_sar11, lags=[6, 12, 18, 24],
+LB_sar11 = acorr_ljungbox(Residuos_sar11, lags=[1,2,3,4,5,6,7,8,9,10,11,12],
     return_df=True)
 
 print(LB_sar11)
@@ -554,21 +554,91 @@ if arch_sar11[1] <0.05:
 else:
     print("NR H0, hay HOMOSCEDASTICIDAD")
 
-# NO HAY AUTOCORRELACIÓN, HAY NORMALIDAD, HAY HOMOSCEDASTICIDAD
+# SI HAY AUTOCORRELACIÓN, HAY NORMALIDAD, HAY HOMOSCEDASTICIDAD
 
-#   Finalmente, nos quedamos con un modelo SARIMA(1,1,1)(1,0,0,12)
+# SIN EMBARGO, el modelo parece mucho más prometedor que los demás, pues AIC es negativo
+# y BIC es casi 8, mientras que en los demás era cercano a 30 más o menos
+
+# SE NOS OCURRIÓ AGREGAR COMPONENTE ESTACIONAL MA, PUES SUCEDE QUE DURANTE LA ESTIMACIÓN
+# CON MA(1) TMB HABÍA UN REZAGO SIGNIFICATIVO EN 12, ENTONCES VAMOS A METER Q=1
+
+
+# %% INTENTAREMOS HACER SARIMA(1,1,1)(1,0,1,12) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+modelo_SAR11 = SARIMAX( Serie, order=(1,1,1), seasonal_order=(1,0,1,12))
+SAR11_estimado = modelo_SAR11.fit(disp=False)
+
+print(SAR11_estimado.summary())
+#   AIC = -18.579       BIC = -5.357
+# TODOS LOS COEFICIENTES SIGUEN SIENDO SIGNIFICATIVOS
+
+# %%   GRAFICAR RESIDUOS
+
+Residual_SAR11 = SAR11_estimado.resid.dropna()
+Residuos_SAR11 = Residual_SAR11.iloc[1:]
+
+plt.plot(Residuos_SAR11)
+plt.title("Residuos del Modelo SARIMA(1,1,1)(1,0,1,12)")
+plt.show()
+
+FAC_residuos_SAR11 = plot_acf(Residuos_SAR11, lags = 15)
+plt.title("FAC de los Residuos del Modelo SARIMA(1,1,1)(1,0,1,12)")
+plt.xlabel("Rezagos")
+plt.show()
+
+FACP_residuos_SAR11 = plot_pacf(Residuos_SAR11, lags = 15)
+plt.title("FACP de los Residuos del Modelo SARIMA(1,1,1)(1,0,1,12)")
+plt.xlabel("Rezagos")
+plt.show()
+
+# %% VERIFICAR SUPUESTOS
+
+#   NO AUTOCORRELACIÓN:
+LB_SAR11 = acorr_ljungbox(Residuos_SAR11, lags=[1,2,3,4,5,6,7,8,9,10,11,12],
+    return_df=True)
+
+print(LB_SAR11)
+
+if (LB_SAR11["lb_pvalue"] < 0.05).any():
+    print("R H0, SI hay autocorrelación")
+else:
+    print("NR H0, NO hay autocorrelación.")
+
+# AHORA SI YA NO HAY AUTOCORRELACIÓN
+
+# %% NORMALIDAD
+Nrm_SAR11 = jarque_bera(Residuos_SAR11)
+print("P-valor:",Nrm_SAR11[1])
+
+if Nrm_SAR11[1] < 0.05:
+    print("R H0, los residuos NO son normales")
+else:
+    print("NR H0, los residuos SON normales")
+
+# %% HOMOSCEDASTICIDAD
+arch_SAR11 = het_arch(Residuos_SAR11, nlags = 12)
+print("P-valor:",arch_sar11[1])
+
+if arch_SAR11[1] <0.05:
+    print("R H0, hay HETEROSCEDASTICIDAD")
+else:
+    print("NR H0, hay HOMOSCEDASTICIDAD")
+
+# SI HAY AUTOCORRELACIÓN, HAY NORMALIDAD, HAY HOMOSCEDASTICIDAD
+
+#   Finalmente, nos quedamos con un modelo SARIMA(1,1,1)(1,0,1,12) ~~~~~~~~~~~~~~~~~~~~~
 
 # %% PRONOSTICAMOS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Prediccion_sarima11 = sar11_estimado.get_forecast(steps=27)
+Prediccion_SARIMA11 = SAR11_estimado.get_forecast(steps=27)
 # Por curiosidad coloqué steps = 27 para ver dos años adelante
-Valores_predichos = Prediccion_sarima11.predicted_mean
-IC_sarima11 = Prediccion_sarima11.conf_int()
+Valores_predichos = Prediccion_SARIMA11.predicted_mean
+IC_SARIMA11 = Prediccion_SARIMA11.conf_int()
 
 tabla_pronostico = pd.DataFrame({
     "pronostico": Valores_predichos,
-    "limite_inferior": IC_sarima11.iloc[:, 0],
-    "limite_superior": IC_sarima11.iloc[:, 1]
+    "limite_inferior": IC_SARIMA11.iloc[:, 0],
+    "limite_superior": IC_SARIMA11.iloc[:, 1]
 })
 print(tabla_pronostico)
 
@@ -580,8 +650,8 @@ plt.ylabel("Precio Relativo")
 plt.plot(Valores_predichos, color="orange")
 plt.fill_between(
     Valores_predichos.index,
-    IC_sarima11.iloc[:, 0],
-    IC_sarima11.iloc[:, 1],
+    IC_SARIMA11.iloc[:, 0],
+    IC_SARIMA11.iloc[:, 1],
     color="orange",
     alpha=0.3,  
 )
